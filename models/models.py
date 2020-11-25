@@ -155,7 +155,6 @@ class Transducer(nn.Module):
 
         # concat first zero
         zero = autograd.Variable(torch.zeros((ys.shape[0], 1)).long())
-
         if ys.is_cuda:
             zero = zero.cuda()
 
@@ -177,14 +176,21 @@ class Transducer(nn.Module):
             xlen = xlen.cuda()
             ylen = ylen.cuda()
         else:
+            print('not cuda')
             out = F.log_softmax(out, dim=3)
             # NOTE loss function need flatten label
             ys = torch.cat([ys[i, :j] for i, j in enumerate(ylen.data)], dim=0).cpu()
 
         xlen_temp = [i.shape[0] for i in out]
         xlen = torch.LongTensor(xlen_temp)
-        xlen = xlen.type(torch.int32).cuda()
+        xlen = xlen.type(torch.int32)
+        if ys.is_cuda:
+            xlen = xlen.cuda()
 
+        print('out:', out)
+        print('ys:', ys.int())
+        # print('xlen:', xlen)
+        # print('ylen:', ylen)
         loss = self.loss(out, ys.int(), xlen, ylen)
         return loss
 

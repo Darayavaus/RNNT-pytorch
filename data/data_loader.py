@@ -19,7 +19,7 @@ import math
 from torch.utils.data import DataLoader
 from torch.utils.data import Dataset
 
-from data.SpecAugment import sparse_image_warp_zcaceres
+# from data.SpecAugment import sparse_image_warp_zcaceres
 
 windows = {'hamming': scipy.signal.hamming, 'hann': scipy.signal.hann, 'blackman': scipy.signal.blackman,
            'bartlett': scipy.signal.bartlett}
@@ -69,23 +69,23 @@ def end_pad_label(inputs):
     return labels
 
 
-def time_warp(spec, W=3):
-    spec = spec.view(1, spec.shape[0], spec.shape[1])
-    num_rows = spec.shape[1]
-    spec_len = spec.shape[2]
+# def time_warp(spec, W=3):
+#     spec = spec.view(1, spec.shape[0], spec.shape[1])
+#     num_rows = spec.shape[1]
+#     spec_len = spec.shape[2]
 
-    y = num_rows // 2
-    horizontal_line_at_ctr = spec[0][y]
-    assert len(horizontal_line_at_ctr) == spec_len
+#     y = num_rows // 2
+#     horizontal_line_at_ctr = spec[0][y]
+#     assert len(horizontal_line_at_ctr) == spec_len
 
-    point_to_warp = horizontal_line_at_ctr[random.randrange(W, spec_len - W)]
-    assert isinstance(point_to_warp, torch.Tensor)
+#     point_to_warp = horizontal_line_at_ctr[random.randrange(W, spec_len - W)]
+#     assert isinstance(point_to_warp, torch.Tensor)
 
-    # Uniform distribution from (0,W) with chance to be up to W negative
-    dist_to_warp = random.randrange(-W, W)
-    src_pts, dest_pts = torch.tensor([[[y, point_to_warp]]]), torch.tensor([[[y, point_to_warp + dist_to_warp]]])
-    warped_spectro, dense_flows = sparse_image_warp_zcaceres.sparse_image_warp(spec, src_pts, dest_pts)
-    return warped_spectro.squeeze(3)
+#     # Uniform distribution from (0,W) with chance to be up to W negative
+#     dist_to_warp = random.randrange(-W, W)
+#     src_pts, dest_pts = torch.tensor([[[y, point_to_warp]]]), torch.tensor([[[y, point_to_warp + dist_to_warp]]])
+#     warped_spectro, dense_flows = sparse_image_warp_zcaceres.sparse_image_warp(spec, src_pts, dest_pts)
+#     return warped_spectro.squeeze(3)
 
 
 def freq_mask(spec, F=15, num_masks=1, replace_with_zero=True):
@@ -235,8 +235,9 @@ class SpectrogramParser(AudioParser):
             spect = torch.FloatTensor(spect)
 
         if self.specaugment:
-            spect = time_mask(freq_mask(time_warp(spect), num_masks=2), num_masks=2)
-            spect = spect.view(spect.shape[1],spect.shape[2])
+            raise NotImplementedError
+            # spect = time_mask(freq_mask(time_warp(spect), num_masks=2), num_masks=2)
+            # spect = spect.view(spect.shape[1],spect.shape[2])
         if self.normalize:
             mean = spect.mean()
             std = spect.std()
@@ -276,17 +277,13 @@ class SpectrogramDataset(Dataset, SpectrogramParser):
 
     def __getitem__(self, index):
         sample = self.ids[index]
-        audio_path, transcript_path = sample[0], sample[1]
-        spect = self.parse_audio(audio_path)
-        transcript = self.parse_transcript(transcript_path)
-        # print(spect.size(), len(transcript))
+        spect, transcript = self.parse_audio(sample[-2]), self.parse_transcript(sample[-1])
         transcript_one_hot = torch.nn.functional.one_hot(torch.LongTensor(transcript), num_classes=len(self.labels_map))
         return spect, transcript, transcript_one_hot, self.labels_map
 
-    def parse_transcript(self, transcript_path):
-        with open(transcript_path, 'r', encoding='utf8') as transcript_file:
-            transcript = transcript_file.read().replace('\n', '')
-        transcript = list(filter(None, [self.labels_map.get(x) for x in list(transcript)]))
+    def parse_transcript(self, transcript):
+        transcript = transcript.replace('\n', '')
+        transcript = list(filter(None, [self.labels_map.get(x.upper()) for x in list(transcript)]))
         return transcript
 
     def __len__(self):

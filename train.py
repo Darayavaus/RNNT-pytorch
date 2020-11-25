@@ -80,7 +80,7 @@ if __name__ == '__main__':
     # ==========================================
     # Tensor board setting
     # ==========================================
-    data_name = args.train_manifest.split("/")[2].split("_")[0]
+    data_name = args.train_manifest.split("/")[-1]
     logging_folder_name = args.log_dir \
                           + data_name + "_" \
                           + str(args.encoder_num_layers) + "encoder_layer_" \
@@ -111,8 +111,8 @@ if __name__ == '__main__':
                                        manifest_filepath=args.train_manifest,
                                        labels=labels,
                                        normalize=True,
-                                       augment=True,
-                                       specaugment=True)
+                                       augment=args.augment,
+                                       specaugment=args.spec_augment)
     test_dataset = SpectrogramDataset(audio_conf=audio_conf,
                                       manifest_filepath=args.val_manifest,
                                       labels=labels,
@@ -156,7 +156,7 @@ if __name__ == '__main__':
                                 lr=args.lr, momentum=.9)
     print(model)
     pytorch_total_params = sum(p.numel() for p in model.parameters())
-    print("Model Parameter is ", pytorch_total_params)
+    print("Numer of parameters:", pytorch_total_params)
     # ==========================================
     # TRAINING
     # ==========================================
@@ -185,6 +185,7 @@ if __name__ == '__main__':
             model.train()
             optimizer.zero_grad()
             train_loss = model(inputs, targets_list, input_sizes, target_sizes)
+            # train_loss = model(inputs, targets_one_hot, input_sizes, target_sizes)
             train_loss.backward()
             optimizer.step()
             train_losses += float(train_loss)
@@ -216,6 +217,7 @@ if __name__ == '__main__':
             targets_list = targets_list.to(device)
 
             eval_loss = model(inputs, targets_list, input_sizes, target_sizes)
+            # eval_loss = model(inputs, targets_one_hot, input_sizes, target_sizes)
             eval_losses += float(eval_loss)
 
             inverse_map = dict((v, k) for k, v in labels_map.items())
