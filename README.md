@@ -4,7 +4,7 @@ Implementation of RNN-Transducer
 
 Installation
 ---
-0. pip isntall -r requirments.txt
+0. pip isntall -r requirements.txt
 1. Install torch  
 2. Install rnnt loss 
 3. install torch audio

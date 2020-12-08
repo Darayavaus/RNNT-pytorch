@@ -1,3 +1,5 @@
+
+#!python
 from models.models import Transducer
 from data.data_loader import AudioDataLoader, SpectrogramDataset, BucketingSampler, DistributedBucketingSampler
 import argparse
@@ -5,6 +7,8 @@ import json
 import os
 import time
 import codecs
+import torch
+torch.cuda.empty_cache()
 import torch.distributed as dist
 import torch.utils.data.distributed
 import models.eval_utils as eval_utils
@@ -21,7 +25,7 @@ parser.add_argument('--batch-size', default=10, type=int, help='Batch size for t
 parser.add_argument('--dropout', default=0.2, type=float, help='Dropout size for training')
 parser.add_argument('--decoder-num-layers', default=2, type=float, help='number of layer at RNN-T model')
 parser.add_argument('--encoder-num-layers', default=3, type=float, help='number of layer at RNN-T model')
-parser.add_argument('--hidden-size', default=250, type=float, help='number of hidden size of rnn layer at RNN-T model')
+parser.add_argument('--hidden-size', default=250, type=int, help='number of hidden size of rnn layer at RNN-T model')
 parser.add_argument('--num-workers', default=6, type=int, help='Number of workers used in data-loading')
 parser.add_argument('--labels-path', default='labels_eng.json', help='Contains all characters for transcription')
 parser.add_argument('--window-size', default=.02, type=float, help='Window size for spectrogram in seconds')
@@ -59,11 +63,8 @@ if __name__ == '__main__':
     # ==========================================
     # PREPROCESS
     # ==========================================
-
-    # Device configuration
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-
     args = parser.parse_args()
+    print('args:', args)
     args.distributed = args.world_size > 1
     main_proc = True
 
@@ -76,6 +77,16 @@ if __name__ == '__main__':
     else:
         if args.cuda and args.gpu_rank:
             torch.cuda.set_device(int(args.gpu_rank))
+         
+    # Device configuration
+    if args.cuda:
+        if torch.cuda.is_available():
+            device = torch.device('cuda')
+        else: 
+            raise ValueError('cuda flag is True, but cuda is not available')
+        
+    else: 
+        device = torch.device('cpu')
 
     # ==========================================
     # Tensor board setting
