@@ -195,27 +195,28 @@ class Transducer(nn.Module):
         output, _ = self.encoder(x)
 
         decoded = []
-        for ind in range(output.size(0)):
-            x = output[ind]
-            vy = autograd.Variable(torch.LongTensor([0]), volatile=True).view(1, 1)  # vector preserve for embedding
-            if x.is_cuda:
-                vy = vy.cuda()
-            _, y, h = self.decoder(y_mat=vy)
-            y_seq = [];
-            logp = 0
+        with torch.no_grad():
+            for ind in range(output.size(0)):
+                x = output[ind]
+                vy = autograd.Variable(torch.LongTensor([0])).view(1, 1)  # vector preserve for embedding
+                if x.is_cuda:
+                    vy = vy.cuda()
+                _, y, h = self.decoder(y_mat=vy)
+                y_seq = [];
+                logp = 0
 
-            for i in x:
-                ytu = self.joint(i, y[0][0])
-                out = F.log_softmax(ytu, dim=0)
-                p, pred = torch.max(out, dim=0)
-                pred = int(pred);
-                logp += float(p)
-                if pred != self.blank:
-                    y_seq.append(pred)
-                    vy.data[0][0] = pred
-                    _, y, h = self.decoder(y_mat=vy, hid=h)
+                for i in x:
+                    ytu = self.joint(i, y[0][0])
+                    out = F.log_softmax(ytu, dim=0)
+                    p, pred = torch.max(out, dim=0)
+                    pred = int(pred);
+                    logp += float(p)
+                    if pred != self.blank:
+                        y_seq.append(pred)
+                        vy.data[0][0] = pred
+                        _, y, h = self.decoder(y_mat=vy, hid=h)
 
-            decoded.append(y_seq)
+                decoded.append(y_seq)
         return decoded
 
     def beam_search(self, xs, labels_map, W=10, prefix=False):

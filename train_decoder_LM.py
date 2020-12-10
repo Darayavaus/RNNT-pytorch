@@ -25,7 +25,7 @@ parser.add_argument('--labels-path', default='labels_eng.json', help='Contains a
 parser.add_argument('--epochs', default=1000, type=int, help='Number of training epochs')
 parser.add_argument('--cuda', dest='cuda', action='store_true', help='Use cuda to train model')
 parser.add_argument('--lr', '--learning-rate', default=1e-3, type=float, help='initial learning rate')
-parser.add_argument('--tensorboard',default=True, help='Turn on tensorboard graphing')
+parser.add_argument('--tensorboard', action='store_true', help='Turn on tensorboard graphing')
 parser.add_argument('--log-dir', default='logs/', help='Location of tensorboard log')
 parser.add_argument('--id', default='RNNT training', help='Identifier for tensorboard run')
 parser.add_argument('--save-folder', default='models/', help='Location to save epoch models')

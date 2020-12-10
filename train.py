@@ -46,6 +46,9 @@ parser.add_argument('--noise-max', default=0.5,
                     help='Maximum noise levels to sample from. Maximum 1.0', type=float)
 parser.add_argument('--world-size', default=1, type=int,
                     help='number of distributed processes')
+parser.add_argument('--dist-backend', default='nccl', type=str,
+                    help='distributed backend. options: nccl, mpi, gloo')
+parser.add_argument('--dist-url', default=None, type=str)
 parser.add_argument('--rank', default=0, type=int,
                     help='The rank of this process')
 parser.add_argument('--gpu-rank', default=None,
@@ -71,7 +74,7 @@ if __name__ == '__main__':
     if args.distributed:
         if args.gpu_rank:
             torch.cuda.set_device(int(args.gpu_rank))
-        dist.init_process_group(backend=args.dist_backend, init_method=args.dist_url,
+        dist.init_process_group(backend=args.dist_backend, init_method='file:///trinity/home/d.cherniuk/asr_project/rnnt_shared_file',
                                 world_size=args.world_size, rank=args.rank)
         main_proc = args.rank == 0  # Only the first proc should save models
     else:

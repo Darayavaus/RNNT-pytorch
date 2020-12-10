@@ -34,7 +34,8 @@ class Corpus(object):
         with open(path, 'r') as f:
             tokens = 0
             for line in f:
-                words = line.split() + ['<eos>']
+                # csv file with transcript in second column
+                words = line.split(',')[-1].split() + ['<eos>']
                 tokens += len(words)
                 for word in words:
                     self.dictionary.add_word(word)
@@ -44,7 +45,8 @@ class Corpus(object):
         token = 0
         with open(path, 'r') as f:
             for line in f:
-                words = line.split() + ['<eos>']
+                # csv file with transcript in second column
+                words = line.split(',')[-1].split() + ['<eos>']
                 for word in words:
                     ids[token] = self.dictionary.word2idx[word]
                     token += 1
